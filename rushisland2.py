@@ -179,8 +179,9 @@ def f_delta2(x):
 # print(f_delta1(x))
 # print(f_delta2(x))
 
+Pm1 = 5.7057429331336316
+
 def f_w1(x):
-    Pm = 5.7057429331336316
     #     Pm = x[14]
     Eqp1 = x[0]
     Edp1 = x[1]
@@ -190,11 +191,11 @@ def f_w1(x):
     Id1 = (Rs * (Edp1 - Vd1) + Xqp * (Eqp1 - Vq1)) / (Rs * Rs + Xdp * Xqp)
     Iq1 = (-Xdp * (Edp1 - Vd1) + Rs * (Eqp1 - Vq1)) / (Rs * Rs + Xdp * Xqp)
     Pe = (Eqp1 * Iq1 - Xdp * Id1 * Iq1 + Edp1 * Id1 + Xqp * Id1 * Iq1)
-    return 1 / (2 * H) * (Pm - Pe - KD * w)
+    return 1 / (2 * H) * (Pm1 - Pe - KD * w)
 
 
+Pm2 = 5.5655296329353838
 def f_w2(x):
-    Pm = 5.5655296329353838
     #     Pm = x[15]
     Eqp2 = x[7]
     Edp2 = x[8]
@@ -204,7 +205,7 @@ def f_w2(x):
     Iq2 = (-Xdp * (Edp2 - Vd2) + Rs * (Eqp2 - Vq2)) / (Rs * Rs + Xdp * Xqp)
     Id2 = (Rs * (Edp2 - Vd2) + Xqp * (Eqp2 - Vq2)) / (Rs * Rs + Xdp * Xqp)
     Pe = (Eqp2 * Iq2 - Xdp * Id2 * Iq2 + Edp2 * Id2 + Xqp * Id2 * Iq2)
-    return 1 / (2 * H) * (Pm - Pe - KD * w)
+    return 1 / (2 * H) * (Pm2 - Pe - KD * w)
 
 
 # print(f_w1(x))
