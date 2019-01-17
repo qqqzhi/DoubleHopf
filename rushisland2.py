@@ -180,7 +180,6 @@ def f_delta2(x):
 # print(f_delta2(x))
 
 Pm1 = 5.7057429331336316
-
 def f_w1(x):
     #     Pm = x[14]
     Eqp1 = x[0]
