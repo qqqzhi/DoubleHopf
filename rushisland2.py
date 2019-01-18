@@ -179,8 +179,8 @@ def f_delta2(x):
 # print(f_delta1(x))
 # print(f_delta2(x))
 
-Pm1 = 5.7057429331336316
 def f_w1(x):
+    Pm1 = 5.7057429331336316
     #     Pm = x[14]
     Eqp1 = x[0]
     Edp1 = x[1]
@@ -193,8 +193,8 @@ def f_w1(x):
     return 1 / (2 * H) * (Pm1 - Pe - KD * w)
 
 
-Pm2 = 5.5655296329353838
 def f_w2(x):
+    Pm2 = 5.5655296329353838
     #     Pm = x[15]
     Eqp2 = x[7]
     Edp2 = x[8]
