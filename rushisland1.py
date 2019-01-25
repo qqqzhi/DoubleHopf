@@ -8,13 +8,12 @@ ratio = 6.9
 Tdp = 5.33
 Tqp = 0.593
 H = 6.1*ratio
-KD = 0*ratio
+# KD = 0*ratio
 Xd = 1.942/ratio
 Xq = 1.921/ratio
-Xdp = 0.374/ratio
-Xqp = Xdp
+Xdp = Xqp = 0.374/ratio
 Xl = 0.214/ratio
-Rs = 0
+# Rs = 0
 
 KA1 = 900
 TA1 = 0.045
@@ -94,37 +93,66 @@ def f_Vdq(x):
 
 
 def f_Efd(Ve, XadIfd, Kc):
-    if Ve <= 0:
-        Efd = 0
-    else:
-        IN = Kc * XadIfd / Ve
-        if IN <= 0:
-            Efd = Ve
-        elif IN <= 0.433:
-            Efd = Ve - 0.577 * Kc * XadIfd
-        elif IN < 0.75:
-            Efd = np.sqrt(0.75 * Ve ** 2 - (Kc * XadIfd) ** 2)
-        elif IN <= 1:
-            Efd = 1.732 * Ve - 1.732 * Kc * XadIfd
-        else:
-            Efd = 0
-    return Efd
+    return Ve - 0.577 * Kc * XadIfd
+    #print("Ve=",Ve)
+#     if Ve <= 0:
+#         Efd = 0
+#     else:
+#         IN = Kc * XadIfd / Ve
+#         #print("IN=",IN)
+#         if IN <= 0:
+#             Efd = Ve
+#         elif IN <= 0.433:
+#             Efd = Ve - 0.577 * Kc * XadIfd
+#         elif IN < 0.75:
+#             Efd = np.sqrt(0.75 * Ve ** 2 - (Kc * XadIfd) ** 2)
+#         elif IN <= 1:
+#             Efd = 1.732 * Ve - 1.732 * Kc * XadIfd
+#         else:
+#             Efd = 0
+#     return Efd
 
 
+def f_Id1(x):
+    Eqp1 = x[0]
+    Edp1 = x[1]
+    Vd1 = np.real(f_Vdq(x)[0])
+    Vq1 = np.imag(f_Vdq(x)[0])
+    return (Eqp1 - Vq1)/Xdp
+
+
+def f_Id2(x):
+    Eqp2 = x[7]
+    Edp2 = x[8]
+    Vd2 = np.real(f_Vdq(x)[1])
+    Vq2 = np.imag(f_Vdq(x)[1])
+    return (Eqp2 - Vq2)/Xdp
+    
+
+def f_Iq1(x):
+    Eqp1 = x[0]
+    Edp1 = x[1]
+    Vd1 = np.real(f_Vdq(x)[0])
+    Vq1 = np.imag(f_Vdq(x)[0])
+    return -(Edp1 - Vd1) / Xqp
+
+
+def f_Iq2(x):
+    Eqp2 = x[7]
+    Edp2 = x[8]
+    Vd2 = np.real(f_Vdq(x)[1])
+    Vq2 = np.imag(f_Vdq(x)[1])
+    return -(Edp2 - Vd2) / Xqp
+    
+    
 def f_Eqp1(x):
     Eqp1 = x[0]
     Edp1 = x[1]
-    Ve1 = x[6]
-    # rint("Ve1="+str(Ve1))
     Vf1 = x[4]
-    Vd1 = np.real(f_Vdq(x)[0])
-    Vq1 = np.imag(f_Vdq(x)[0])
-    Id1 = (Rs * (Edp1 - Vd1) + Xqp * (Eqp1 - Vq1)) / (Rs * Rs + Xdp * Xqp)
+    Ve1 = x[6]
+    Id1 = f_Id1(x)
     XadIfd = Eqp1 + (Xd - Xdp) * Id1
-    Vfe = KD1 * XadIfd + KE1 * Ve1 + Aex1 * np.exp(Bex1 * Ve1)
-    # rint("Vfe1="+str(Vfe))
     Efd = f_Efd(Ve1, XadIfd, KC1)
-    # rint("Efd1="+str(Efd))
     return 1 / Tdp * (-Eqp1 - (Xd - Xdp) * Id1 + Efd)
 
 
@@ -132,41 +160,26 @@ def f_Eqp2(x):
     Eqp2 = x[7]
     Edp2 = x[8]
     Vf2 = x[11]
-    Ve2 = x[13]
-    Vd2 = np.real(f_Vdq(x)[1])
-    Vq2 = np.imag(f_Vdq(x)[1])
-    Id2 = (Rs * (Edp2 - Vd2) + Xqp * (Eqp2 - Vq2)) / (Rs * Rs + Xdp * Xqp)
+    Ve2 = x[13]    
+    Id2 = f_Id2(x)
     XadIfd = Eqp2 + (Xd - Xdp) * Id2
-    Vfe = KD2 * XadIfd + KE2 * Ve2 + Aex2 * np.exp(Bex2 * Ve2)
     Efd = f_Efd(Ve2, XadIfd, KC2)
     return 1 / Tdp * (-Eqp2 - (Xd - Xdp) * Id2 + Efd)
 
 
-# print(f_Eqp1(x))
-# print(f_Eqp2(x))
-
 def f_Edp1(x):
     Eqp1 = x[0]
     Edp1 = x[1]
-    Vd1 = np.real(f_Vdq(x)[0])
-    Vq1 = np.imag(f_Vdq(x)[0])
-    Iq1 = (-Xdp * (Edp1 - Vd1) + Rs * (Eqp1 - Vq1)) / (Rs * Rs + Xdp * Xqp)
-    # print("Iq1="+str(Iq1))
-    # print(-Edp1 + (Xq - Xqp)*Iq1)
+    Iq1 = f_Iq1(x)
     return 1 / Tqp * (-Edp1 + (Xq - Xqp) * Iq1)
 
 
 def f_Edp2(x):
     Eqp2 = x[7]
     Edp2 = x[8]
-    Vd2 = np.real(f_Vdq(x)[1])
-    Vq2 = np.imag(f_Vdq(x)[1])
-    Iq2 = (-Xdp * (Edp2 - Vd2) + Rs * (Eqp2 - Vq2)) / (Rs * Rs + Xdp * Xqp)
+    Iq2 = f_Iq2(x)
     return 1 / Tqp * (-Edp2 + (Xq - Xqp) * Iq2)
 
-
-# print(f_Edp1(x))
-# print(f_Edp2(x))
 
 def f_delta1(x):
     return x[3] * 120 * np.pi
@@ -176,21 +189,16 @@ def f_delta2(x):
     return x[10] * 120 * np.pi
 
 
-# print(f_delta1(x))
-# print(f_delta2(x))
-
+# Pe = Eq*Iq + Ed*Id = Eq*(Vd-Ed)/Xqp + Ed*(Eq-Vq)/Xdp = (Eq*Vd - Ed*Vq)/Xdp
 def f_w1(x):
     #     Pm = x[14]
     Pm = 5.8033125095918949
     Eqp1 = x[0]
     Edp1 = x[1]
-    w = x[3]
     Vd1 = np.real(f_Vdq(x)[0])
     Vq1 = np.imag(f_Vdq(x)[0])
-    Id1 = (Rs * (Edp1 - Vd1) + Xqp * (Eqp1 - Vq1)) / (Rs * Rs + Xdp * Xqp)
-    Iq1 = (-Xdp * (Edp1 - Vd1) + Rs * (Eqp1 - Vq1)) / (Rs * Rs + Xdp * Xqp)
-    Pe = (Eqp1 * Iq1 - Xdp * Id1 * Iq1 + Edp1 * Id1 + Xqp * Id1 * Iq1)
-    return 1 / (2 * H) * (Pm - Pe - KD * w)
+    Pe = (Eqp1*Vd1 - Edp1*Vq1)/Xdp
+    return 1 / (2 * H) * (Pm - Pe)
 
 
 def f_w2(x):
@@ -198,30 +206,21 @@ def f_w2(x):
     Pm = 5.4105277723540572
     Eqp2 = x[7]
     Edp2 = x[8]
-    w = x[10]
     Vd2 = np.real(f_Vdq(x)[1])
     Vq2 = np.imag(f_Vdq(x)[1])
-    Iq2 = (-Xdp * (Edp2 - Vd2) + Rs * (Eqp2 - Vq2)) / (Rs * Rs + Xdp * Xqp)
-    Id2 = (Rs * (Edp2 - Vd2) + Xqp * (Eqp2 - Vq2)) / (Rs * Rs + Xdp * Xqp)
-    Pe = (Eqp2 * Iq2 - Xdp * Id2 * Iq2 + Edp2 * Id2 + Xqp * Id2 * Iq2)
-    return 1 / (2 * H) * (Pm - Pe - KD * w)
+    Pe = (Eqp2*Vd2 - Edp2*Vq2)/Xdp
+    return 1 / (2 * H) * (Pm - Pe)
 
 
-# print(f_w1(x))
-# print(f_w2(x))
 
 def f_VF1(x):
     Eqp1 = x[0]
     Edp1 = x[1]
     Vf1 = x[4]
     Ve1 = x[6]
-    Vd1 = np.real(f_Vdq(x)[0])
-    Vq1 = np.imag(f_Vdq(x)[0])
-    Id1 = (Rs * (Edp1 - Vd1) + Xqp * (Eqp1 - Vq1)) / (Rs * Rs + Xdp * Xqp)
+    Id1 = f_Id1(x)
     XadIfd = Eqp1 + (Xd - Xdp) * Id1
     Vfe = KD1 * XadIfd + KE1 * Ve1 + Aex1 * np.exp(Bex1 * Ve1)
-    # print(Vfe)
-    # print(Vf1)
     return (Vfe - Vf1) / TF1
 
 
@@ -230,22 +229,12 @@ def f_VF2(x):
     Edp2 = x[8]
     Vf2 = x[11]
     Ve2 = x[13]
-    Vd2 = np.real(f_Vdq(x)[1])
-    Vq2 = np.imag(f_Vdq(x)[1])
-    Id2 = (Rs * (Edp2 - Vd2) + Xqp * (Eqp2 - Vq2)) / (Rs * Rs + Xdp * Xqp)
+    Id2 = f_Id2(x)
     XadIfd = Eqp2 + (Xd - Xdp) * Id2
     Vfe = KD2 * XadIfd + KE2 * Ve2 + Aex2 * np.exp(Bex2 * Ve2)
-    # print(Vfe)
-    # print(Vf2)
     return (Vfe - Vf2) / TF2
 
 
-# print(f_VF1(x))
-# print(f_VF2(x))
-
-"""
-Va_dot = (Vsum - Vr)/Ta;
-"""
 
 
 def f_VA1(x):
@@ -256,9 +245,7 @@ def f_VA1(x):
     Vf1 = x[4]
     Va1 = x[5]
     Ve1 = x[6]
-    Vd1 = np.real(f_Vdq(x)[0])
-    Vq1 = np.imag(f_Vdq(x)[0])
-    Id1 = (Rs * (Edp1 - Vd1) + Xqp * (Eqp1 - Vq1)) / (Rs * Rs + Xdp * Xqp)
+    Id1 = f_Id1(x)
     XadIfd = Eqp1 + (Xd - Xdp) * Id1
     Vfe = KD1 * XadIfd + KE1 * Ve1 + Aex1 * np.exp(Bex1 * Ve1)
     yf = KF1 / TF1 * (Vfe - Vf1)
@@ -274,9 +261,7 @@ def f_VA2(x):
     Vf2 = x[11]
     Va2 = x[12]
     Ve2 = x[13]
-    Vd2 = np.real(f_Vdq(x)[1])
-    Vq2 = np.imag(f_Vdq(x)[1])
-    Id2 = (Rs * (Edp2 - Vd2) + Xqp * (Eqp2 - Vq2)) / (Rs * Rs + Xdp * Xqp)
+    Id2 = f_Id2(x)
     XadIfd = Eqp2 + (Xd - Xdp) * Id2
     Vfe = KD2 * XadIfd + KE2 * Ve2 + Aex2 * np.exp(Bex2 * Ve2)
     yf = KF2 / TF2 * (Vfe - Vf2)
@@ -284,12 +269,6 @@ def f_VA2(x):
     return (Vsum - Va2) / TA2
 
 
-# print(f_VA1(x))
-# print(f_VA2(x))
-
-"""
-Ve_dot = (KA*Va - Vfe) / Te
-"""
 
 
 def f_VE1(x):
@@ -298,9 +277,7 @@ def f_VE1(x):
     Vf1 = x[4]
     Va1 = x[5]
     Ve1 = x[6]
-    Vd1 = np.real(f_Vdq(x)[0])
-    Vq1 = np.imag(f_Vdq(x)[0])
-    Id1 = (Rs * (Edp1 - Vd1) + Xqp * (Eqp1 - Vq1)) / (Rs * Rs + Xdp * Xqp)
+    Id1 = f_Id1(x)
     XadIfd = Eqp1 + (Xd - Xdp) * Id1
     Vfe = KD1 * XadIfd + KE1 * Ve1 + Aex1 * np.exp(Bex1 * Ve1)
     return (KA1 * Va1 - Vfe) / TE1
@@ -312,16 +289,11 @@ def f_VE2(x):
     Vf2 = x[11]
     Va2 = x[12]
     Ve2 = x[13]
-    Vd2 = np.real(f_Vdq(x)[1])
-    Vq2 = np.imag(f_Vdq(x)[1])
-    Id2 = (Rs * (Edp2 - Vd2) + Xqp * (Eqp2 - Vq2)) / (Rs * Rs + Xdp * Xqp)
+    Id2 = f_Id2(x)
     XadIfd = Eqp2 + (Xd - Xdp) * Id2
     Vfe = KD2 * XadIfd + KE2 * Ve2 + Aex2 * np.exp(Bex2 * Ve2)
     return (KA2 * Va2 - Vfe) / TE2
 
-
-# print(f_VE1(x))
-# print(f_VE2(x))
 
 def sys_fun(x):
     fun = [f_Eqp1, f_Edp1, f_delta1, f_w1, f_VF1, f_VA1, f_VE1, f_Eqp2, f_Edp2, f_delta2, f_w2, f_VF2, f_VA2, f_VE2]
@@ -372,29 +344,3 @@ def S3_mat(n):
     S3 = S3[:,Bx3_idx]
     S3[rmidx,rmidx_inBx3] = 1
     return S3
-
-def Trissian(f_test, x0):
-    """
-    This function calculates the 3rd order derivative of a function f: R^n -> R
-    input: 
-        f_test is the function
-        x0 where the 3rd order want to be calcuated
-    return: 3-D matrix
-    """
-    Trissian = np.zeros((x0.shape[0],x0.shape[0],x0.shape[0]))
-    for i in range(x0.shape[0]):
-        h = 0.001
-        xp1 = np.array(x0, copy=True) 
-        xp1[i] += h
-        #print(xp1)
-        xp2 = np.array(x0, copy=True) 
-        xp2[i] += 2*h
-        #print(xp2)
-        xm1 = np.array(x0, copy=True) 
-        xm1[i] -= h
-        #print(xm1)
-        xm2 = np.array(x0, copy=True) 
-        xm2[i] -= 2*h
-        #print(xm2)
-        Trissian[i] = (-nd.Hessian(f_test)(xp2) + 8*nd.Hessian(f_test)(xp1)- 8*nd.Hessian(f_test)(xm1) + nd.Hessian(f_test)(xm2))/(12*h)
-    return Trissian

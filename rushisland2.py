@@ -385,7 +385,7 @@ def Trissian(f_test, x0):
     """
     Trissian = np.zeros((x0.shape[0],x0.shape[0],x0.shape[0]))
     for i in range(x0.shape[0]):
-        h = 0.001
+        h = 1e-10
         xp1 = np.array(x0, copy=True) 
         xp1[i] += h
         #print(xp1)
