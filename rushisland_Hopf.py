@@ -9,15 +9,16 @@ ratio = 6.9
 Tdp = 5.33
 Tqp = 0.593
 H = 6.1*ratio
-# KD = 0*ratio
+KD = 0*ratio
 Xd = 1.942/ratio
 Xq = 1.921/ratio
-Xdp = Xqp = 0.374/ratio
+Xdp = 0.374/ratio
+Xqp = Xdp
 Xl = 0.214/ratio
-# Rs = 0
+Rs = 0
 
 KA1 = 900
-TA1 = 0.045
+TA1 = 0.0045
 KE1 = 1.0
 TE1 = 0.78
 Aex1 = 0.00325
@@ -28,10 +29,10 @@ TF1 = 0.69
 KF1 = 0.01
 
 
-KA2 = 52.5
-TA2 = 0.9
-KE2 = 0.1
-TE2 = 2.0
+KA2 = 50
+TA2 = 0.006
+KE2 = 1
+TE2 = 0.78
 Aex2 = 0.00325
 Bex2 = 0.795
 KC2 = 0.156
@@ -190,7 +191,7 @@ def f_delta2(x):
 # Pe = Eq*Iq + Ed*Id = Eq*(Vd-Ed)/Xqp + Ed*(Eq-Vq)/Xdp = (Eq*Vd - Ed*Vq)/Xdp
 def f_w1(x):
     #     Pm = x[14]
-    Pm = 5.8033125095918949
+    Pm = 5.4272581963009570
     Eqp1 = x[0]
     Edp1 = x[1]
     Vd1 = np.real(f_Vdq(x)[0])
@@ -201,7 +202,7 @@ def f_w1(x):
 
 def f_w2(x):
     #     Pm = x[15]
-    Pm = 5.4105277723540572
+    Pm = 4.5459824955834529
     Eqp2 = x[7]
     Edp2 = x[8]
     Vd2 = np.real(f_Vdq(x)[1])
@@ -237,7 +238,7 @@ def f_VF2(x):
 
 def f_VA1(x):
     #     Vref = x[16]
-    Vref = 1.0454209181481624
+    Vref = 1.04
     Eqp1 = x[0]
     Edp1 = x[1]
     Vf1 = x[4]
@@ -253,7 +254,7 @@ def f_VA1(x):
 
 def f_VA2(x):
     #     Vref = x[17]
-    Vref = 1.0783113341915367
+    Vref = 1.03
     Eqp2 = x[7]
     Edp2 = x[8]
     Vf2 = x[11]
@@ -1110,9 +1111,3 @@ def Trissian(x):
     return np.array([f(x, 3) for f in
                      [d_Eq1, d_Ed1, d_delta1, d_w1, d_Vf1, d_Va1, d_Ve1, d_Eq2, d_Ed2, d_delta2, d_w2, d_Vf2, d_Va2,
                       d_Ve2]])
-
-x = np.array([9.8626863024948619e-01,6.1165116423884036e-01,1.2558184342430763e+00,\
-                                 0.0,4.8830798594520859e+00,5.4256442882800945e-03,\
-              2.3355826940514226e+00,9.0728914911947700e-01,6.3456098937805228e-01,\
-              1.3019464471464004e+00,                   0.0,2.4973842398326895e+00,\
-              4.7569223615860759e-02,2.0985781450456096e+00])
