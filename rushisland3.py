@@ -1,3 +1,4 @@
+import numdifftools as nd
 import numpy as np
 from numpy import sin
 from numpy import cos
@@ -7,18 +8,18 @@ Specify the generator parameters
 ratio = 6.9
 
 Tdp = 5.33
-Tqp = 0.593
-H = 6.1*ratio
-KD = 0*ratio
+Tqp1 = 1.2
+Tqp2 = 1.2
+H = 10*ratio
+# KD = 0*ratio
 Xd = 1.942/ratio
 Xq = 1.921/ratio
-Xdp = 0.374/ratio
-Xqp = Xdp
+Xdp = Xqp = 0.374/ratio
 Xl = 0.214/ratio
-Rs = 0
+# Rs = 0
 
 KA1 = 900
-TA1 = 0.0045
+TA1 = 0.045
 KE1 = 1.0
 TE1 = 0.78
 Aex1 = 0.00325
@@ -29,10 +30,10 @@ TF1 = 0.69
 KF1 = 0.01
 
 
-KA2 = 50
-TA2 = 0.006
-KE2 = 1
-TE2 = 0.78
+KA2 = 60
+TA2 = 0.69
+KE2 = 0.1
+TE2 = 1.0
 Aex2 = 0.00325
 Bex2 = 0.795
 KC2 = 0.156
@@ -98,7 +99,7 @@ def f_Efd(Ve, XadIfd, Kc):
 #         Efd = 0
 #     else:
 #         IN = Kc * XadIfd / Ve
-#         #print("IN=",IN)
+#         print("IN=",IN)
 #         if IN <= 0:
 #             Efd = Ve
 #         elif IN <= 0.433:
@@ -170,14 +171,14 @@ def f_Edp1(x):
     Eqp1 = x[0]
     Edp1 = x[1]
     Iq1 = f_Iq1(x)
-    return 1 / Tqp * (-Edp1 + (Xq - Xqp) * Iq1)
+    return 1 / Tqp1 * (-Edp1 + (Xq - Xqp) * Iq1)
 
 
 def f_Edp2(x):
     Eqp2 = x[7]
     Edp2 = x[8]
     Iq2 = f_Iq2(x)
-    return 1 / Tqp * (-Edp2 + (Xq - Xqp) * Iq2)
+    return 1 / Tqp2 * (-Edp2 + (Xq - Xqp) * Iq2)
 
 
 def f_delta1(x):
@@ -188,10 +189,11 @@ def f_delta2(x):
     return x[10] * 120 * np.pi
 
 
+
 # Pe = Eq*Iq + Ed*Id = Eq*(Vd-Ed)/Xqp + Ed*(Eq-Vq)/Xdp = (Eq*Vd - Ed*Vq)/Xdp
 def f_w1(x):
-    #     Pm = x[14]
-    Pm = 5.4272581963009570
+    #Pm = x[14]
+    Pm = 5.0702112295264614
     Eqp1 = x[0]
     Edp1 = x[1]
     Vd1 = np.real(f_Vdq(x)[0])
@@ -201,8 +203,8 @@ def f_w1(x):
 
 
 def f_w2(x):
-    #     Pm = x[15]
-    Pm = 4.5459824955834529
+    #Pm = x[15]
+    Pm = 5.1024231192973799
     Eqp2 = x[7]
     Edp2 = x[8]
     Vd2 = np.real(f_Vdq(x)[1])
@@ -237,8 +239,8 @@ def f_VF2(x):
 
 
 def f_VA1(x):
-    #     Vref = x[16]
-    Vref = 1.04
+    #Vref = x[16]
+    Vref = 1.0212467761696034
     Eqp1 = x[0]
     Edp1 = x[1]
     Vf1 = x[4]
@@ -253,8 +255,8 @@ def f_VA1(x):
 
 
 def f_VA2(x):
-    #     Vref = x[17]
-    Vref = 1.03
+    #Vref = x[17]
+    Vref = 1.0516549249756957
     Eqp2 = x[7]
     Edp2 = x[8]
     Vf2 = x[11]
@@ -296,11 +298,14 @@ def f_VE2(x):
 
 def sys_fun(x):
     fun = [f_Eqp1, f_Edp1, f_delta1, f_w1, f_VF1, f_VA1, f_VE1, f_Eqp2, f_Edp2, f_delta2, f_w2, f_VF2, f_VA2, f_VE2]
-    #     J = np.array([nd.Jacobian(f)(x).ravel() for f in fun])
-    #     J = J[:,:14]
-    #     lam, v = np.linalg.eig(J)
-    #     res = np.append(np.array([f(x).ravel() for f in fun]).ravel(), [lam[4].real,lam[5].real,lam[8].real,lam[9].real])
+#     J = np.array([nd.Jacobian(f)(x).ravel() for f in fun])
+#     J = J[:,:14]
+#     lam, v = np.linalg.eig(J)
+#     print(lam)
+#     res = np.append(np.array([f(x).ravel() for f in fun]).ravel(), [lam[4].real,lam[5].real,lam[7].real,lam[8].real])
     return np.array([f(x).ravel() for f in fun]).ravel()
+#     return res
+
 
 # n is the length of column vector u
 
@@ -794,24 +799,24 @@ def d_Eq2(x, order):
 
 def d_Ed1(x, order):
     if order == 1:
-        dEd = (Xq - Xqp) / Tqp * d_Iq1(x, order)
-        dEd[1] -= 1.0 / Tqp
+        dEd = (Xq - Xqp) / Tqp1 * d_Iq1(x, order)
+        dEd[1] -= 1.0 / Tqp1
         return dEd
     if order == 2:
-        return (Xq - Xqp) / Tqp * d_Iq1(x, order)
+        return (Xq - Xqp) / Tqp1 * d_Iq1(x, order)
     if order == 3:
-        return (Xq - Xqp) / Tqp * d_Iq1(x, order)
+        return (Xq - Xqp) / Tqp1 * d_Iq1(x, order)
 
 
 def d_Ed2(x, order):
     if order == 1:
-        dEd = (Xq - Xqp) / Tqp * d_Iq2(x, order)
-        dEd[8] -= 1.0 / Tqp
+        dEd = (Xq - Xqp) / Tqp2 * d_Iq2(x, order)
+        dEd[8] -= 1.0 / Tqp2
         return dEd
     if order == 2:
-        return (Xq - Xqp) / Tqp * d_Iq2(x, order)
+        return (Xq - Xqp) / Tqp2 * d_Iq2(x, order)
     if order == 3:
-        return (Xq - Xqp) / Tqp * d_Iq2(x, order)
+        return (Xq - Xqp) / Tqp2 * d_Iq2(x, order)
 
 
 def d_delta1(x, order):
@@ -1114,10 +1119,8 @@ def Trissian(x):
 
 all_fun = [f_Eqp1,f_Edp1,f_delta1,f_w1,f_VF1,f_VA1,f_VE1,f_Eqp2,f_Edp2,f_delta2,f_w2,f_VF2,f_VA2,f_VE2]
 
-x = np.array([1.1401449800918992e+00,  4.9958886847981759e-01,\
-              1.0481051635377925e+00,                       0,\
-              5.5940711445854285e+00,  6.2156346050949197e-03,\
-              2.6740199944145058e+00,  4.6587263056888706e-01,\
-              7.5266995341329701e-01,  1.7066100770026795e+00,\
-                                   0,  3.1108167105851221e+00,\
-              6.2216334211702438e-02,  1.4891750152700951e+00])
+x = np.array([9.1692153372448626e-01,6.0515947279109528e-01,1.2352617212434076e+00,\
+              0,4.3089371922257449,4.7877079913619383e-03,\
+              2.0617498270937253,8.7400377534526785e-01,6.2804277946704967e-01,\
+              1.2822424306861879,0,2.3789538759447661,\
+              3.9649231265746099e-02,1.9994732373664725])

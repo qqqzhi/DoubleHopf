@@ -1,3 +1,4 @@
+import numdifftools as nd
 import numpy as np
 from numpy import sin
 from numpy import cos
@@ -9,16 +10,15 @@ ratio = 6.9
 Tdp = 5.33
 Tqp = 0.593
 H = 6.1*ratio
-KD = 0*ratio
+# KD = 0*ratio
 Xd = 1.942/ratio
 Xq = 1.921/ratio
-Xdp = 0.374/ratio
-Xqp = Xdp
+Xdp = Xqp = 0.374/ratio
 Xl = 0.214/ratio
-Rs = 0
+# Rs = 0
 
 KA1 = 900
-TA1 = 0.0045
+TA1 = 0.045
 KE1 = 1.0
 TE1 = 0.78
 Aex1 = 0.00325
@@ -26,19 +26,19 @@ Bex1 = 0.795
 KC1 = 0.156
 KD1 = 1.1792
 TF1 = 0.69
-KF1 = 0.01
+KF1 = 0.0165
 
 
-KA2 = 50
-TA2 = 0.006
-KE2 = 1
+KA2 = 250
+TA2 = 2.0
+KE2 = 1.0
 TE2 = 0.78
 Aex2 = 0.00325
 Bex2 = 0.795
 KC2 = 0.156
 KD2 = 1.1792
-TF2 = 1.19
-KF2 = 0.001
+TF2 = 1.0
+KF2 = 0.0042
 
 Z13 = 3.8E-4 + 1j * 1.216E-2  #
 Z23 = 3.8E-4 + 1j * 1.184E-2  #
@@ -63,28 +63,12 @@ def f_Vdq(x):
     delta1 = x[2]
     w1 = x[3]
     E1 = (Edp1 + 1j * Eqp1) * np.exp(1j * (delta1 - np.pi / 2))
-
     Eqp2 = x[7]
     Edp2 = x[8]
     delta2 = x[9]
     w2 = x[10]
     E2 = (Edp2 + 1j * Eqp2) * np.exp(1j * (delta2 - np.pi / 2))
-
     Vdq = np.zeros((2, 1), dtype=complex)
-#     Z13 = 3.8E-4 + 1j * 1.216E-2  #
-#     Z23 = 3.8E-4 + 1j * 1.184E-2  #
-#     Z34 = 3.57E-3 + 1j * 3.362E-2  #
-#     Z12 = Z13 + Z23 + (Z13 * Z23) / Z34;
-#     Z24 = Z23 + Z34 + (Z23 * Z34) / Z13;
-#     Z14 = Z13 + Z34 + (Z13 * Z34) / Z23;
-#     Y12 = 1 / Z12
-#     Y24 = 1 / Z24
-#     Y14 = 1 / Z14
-#     Y1 = 1 / (1j * Xdp);
-#     Y2 = Y1;
-#     C = np.linalg.solve(np.array([[Y12 + Y14 + Y1, -Y12], [-Y12, Y12 + Y24 + Y2]]),
-#                         np.array([[Y1, 0, Y14], [0, Y2, Y24]]))
-
     D = np.array([[np.exp(1j * (np.pi / 2 - delta1)), 0], [0, np.exp(1j * (np.pi / 2 - delta2))]], dtype=complex)
     y = np.array([[E1], [E2], [1]], dtype=complex)
     Vdq = np.matmul(np.matmul(D, C), y)
@@ -93,7 +77,6 @@ def f_Vdq(x):
 
 def f_Efd(Ve, XadIfd, Kc):
     return Ve - 0.577 * Kc * XadIfd
-    #print("Ve=",Ve)
 #     if Ve <= 0:
 #         Efd = 0
 #     else:
@@ -109,6 +92,18 @@ def f_Efd(Ve, XadIfd, Kc):
 #             Efd = 1.732 * Ve - 1.732 * Kc * XadIfd
 #         else:
 #             Efd = 0
+#     return Efd
+
+#     IN = Kc * XadIfd / Ve
+#     print("IN=",IN)
+#     if IN <= 0.433:
+#         Efd = Ve - 0.577 * Kc * XadIfd
+#     elif IN < 0.75:
+#         Efd = np.sqrt(0.75 * Ve ** 2 - (Kc * XadIfd) ** 2)
+#     elif IN <= 1:
+#         Efd = 1.732 * Ve - 1.732 * Kc * XadIfd
+#     else:
+#         Efd = Ve
 #     return Efd
 
 
@@ -188,28 +183,6 @@ def f_delta2(x):
     return x[10] * 120 * np.pi
 
 
-# Pe = Eq*Iq + Ed*Id = Eq*(Vd-Ed)/Xqp + Ed*(Eq-Vq)/Xdp = (Eq*Vd - Ed*Vq)/Xdp
-def f_w1(x):
-    #     Pm = x[14]
-    Pm = 5.4272581963009570
-    Eqp1 = x[0]
-    Edp1 = x[1]
-    Vd1 = np.real(f_Vdq(x)[0])
-    Vq1 = np.imag(f_Vdq(x)[0])
-    Pe = (Eqp1*Vd1 - Edp1*Vq1)/Xdp
-    return 1 / (2 * H) * (Pm - Pe)
-
-
-def f_w2(x):
-    #     Pm = x[15]
-    Pm = 4.5459824955834529
-    Eqp2 = x[7]
-    Edp2 = x[8]
-    Vd2 = np.real(f_Vdq(x)[1])
-    Vq2 = np.imag(f_Vdq(x)[1])
-    Pe = (Eqp2*Vd2 - Edp2*Vq2)/Xdp
-    return 1 / (2 * H) * (Pm - Pe)
-
 
 
 def f_VF1(x):
@@ -232,41 +205,6 @@ def f_VF2(x):
     XadIfd = Eqp2 + (Xd - Xdp) * Id2
     Vfe = KD2 * XadIfd + KE2 * Ve2 + Aex2 * np.exp(Bex2 * Ve2)
     return (Vfe - Vf2) / TF2
-
-
-
-
-def f_VA1(x):
-    #     Vref = x[16]
-    Vref = 1.04
-    Eqp1 = x[0]
-    Edp1 = x[1]
-    Vf1 = x[4]
-    Va1 = x[5]
-    Ve1 = x[6]
-    Id1 = f_Id1(x)
-    XadIfd = Eqp1 + (Xd - Xdp) * Id1
-    Vfe = KD1 * XadIfd + KE1 * Ve1 + Aex1 * np.exp(Bex1 * Ve1)
-    yf = KF1 / TF1 * (Vfe - Vf1)
-    Vsum = Vref - np.absolute(f_Vdq(x)[0]) - yf
-    return (Vsum - Va1) / TA1
-
-
-def f_VA2(x):
-    #     Vref = x[17]
-    Vref = 1.03
-    Eqp2 = x[7]
-    Edp2 = x[8]
-    Vf2 = x[11]
-    Va2 = x[12]
-    Ve2 = x[13]
-    Id2 = f_Id2(x)
-    XadIfd = Eqp2 + (Xd - Xdp) * Id2
-    Vfe = KD2 * XadIfd + KE2 * Ve2 + Aex2 * np.exp(Bex2 * Ve2)
-    yf = KF2 / TF2 * (Vfe - Vf2)
-    Vsum = Vref - np.absolute(f_Vdq(x)[1]) - yf
-    return (Vsum - Va2) / TA2
-
 
 
 
@@ -294,15 +232,7 @@ def f_VE2(x):
     return (KA2 * Va2 - Vfe) / TE2
 
 
-def sys_fun(x):
-    fun = [f_Eqp1, f_Edp1, f_delta1, f_w1, f_VF1, f_VA1, f_VE1, f_Eqp2, f_Edp2, f_delta2, f_w2, f_VF2, f_VA2, f_VE2]
-    #     J = np.array([nd.Jacobian(f)(x).ravel() for f in fun])
-    #     J = J[:,:14]
-    #     lam, v = np.linalg.eig(J)
-    #     res = np.append(np.array([f(x).ravel() for f in fun]).ravel(), [lam[4].real,lam[5].real,lam[8].real,lam[9].real])
-    return np.array([f(x).ravel() for f in fun]).ravel()
 
-# n is the length of column vector u
 
 def T2_mat(n):
     T2 = np.eye(n**2,dtype=int)
@@ -1112,12 +1042,10 @@ def Trissian(x):
                      [d_Eq1, d_Ed1, d_delta1, d_w1, d_Vf1, d_Va1, d_Ve1, d_Eq2, d_Ed2, d_delta2, d_w2, d_Vf2, d_Va2,
                       d_Ve2]])
 
-all_fun = [f_Eqp1,f_Edp1,f_delta1,f_w1,f_VF1,f_VA1,f_VE1,f_Eqp2,f_Edp2,f_delta2,f_w2,f_VF2,f_VA2,f_VE2]
-
-x = np.array([1.1401449800918992e+00,  4.9958886847981759e-01,\
-              1.0481051635377925e+00,                       0,\
-              5.5940711445854285e+00,  6.2156346050949197e-03,\
-              2.6740199944145058e+00,  4.6587263056888706e-01,\
-              7.5266995341329701e-01,  1.7066100770026795e+00,\
-                                   0,  3.1108167105851221e+00,\
-              6.2216334211702438e-02,  1.4891750152700951e+00])
+x = np.array([1.0546244552829307e+00,  6.2457917138951169e-01,
+        1.3860399333558577e+00, -5.2746489682127123e-29,
+        5.6887973361876769e+00,  6.3208859290974180e-03,
+        2.7190447967027995e+00,  9.8001167763065478e-01,
+        6.7832727915820024e-01,  1.5033307201709023e+00,
+       -9.6901529317095102e-29,  5.7237714384457252e+00,
+        2.2895085753782900e-02,  2.7356642090173811e+00])
