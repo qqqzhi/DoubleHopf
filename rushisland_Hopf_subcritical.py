@@ -1,10 +1,40 @@
-import numdifftools as nd
 import numpy as np
 from numpy import sin
 from numpy import cos
+import numdifftools as nd
 """
 Specify the generator parameters
 """
+x = np.array([9.8857022079307244e-01,  6.6765166154557409e-01,
+        1.4327991070863149e+00, -6.2012602999812389e-27,
+        5.5853319944416731e+00,  5.5853319944416731e+00,
+        2.6698652981865929e+00,  1.0107960956515956e+00,
+        6.1341539935903511e-01,  1.3167338461767972e+00,
+        2.9090465583649489e-27,  5.0705619655303469e+00,
+        5.0705619655303469e+00,  2.4249037561439817e+00,])
+
+KA1 = 500
+TA1 = 0.045
+KE1 = 1.0
+TE1 = 0.78
+KF1 = 0.0165
+TF1 = 0.69
+Aex1 = 0.00325
+Bex1 = 0.795
+KC1 = 0.156
+KD1 = 1.1792
+
+KA2 = 300
+TA2 = 2.0
+KE2 = 1.0
+TE2 = 0.78
+KF2 = 0.0042
+TF2 = 1.0
+Aex2 = 0.00325
+Bex2 = 0.795
+KC2 = 0.156
+KD2 = 1.1792
+
 ratio = 6.9
 
 Tdp = 5.33
@@ -16,29 +46,6 @@ Xq = 1.921/ratio
 Xdp = Xqp = 0.374/ratio
 Xl = 0.214/ratio
 # Rs = 0
-
-KA1 = 900
-TA1 = 0.045
-KE1 = 1.0
-TE1 = 0.78
-Aex1 = 0.00325
-Bex1 = 0.795
-KC1 = 0.156
-KD1 = 1.1792
-TF1 = 0.69
-KF1 = 0.0165
-
-
-KA2 = 250
-TA2 = 2.0
-KE2 = 1.0
-TE2 = 0.78
-Aex2 = 0.00325
-Bex2 = 0.795
-KC2 = 0.156
-KD2 = 1.1792
-TF2 = 1.0
-KF2 = 0.0042
 
 Z13 = 3.8E-4 + 1j * 1.216E-2  #
 Z23 = 3.8E-4 + 1j * 1.184E-2  #
@@ -77,7 +84,7 @@ def f_Vdq(x):
 
 
 def f_Efd(Ve, XadIfd, Kc):
-    return max(min(Ve - 0.577 * Kc * XadIfd, 8), 0)
+    return Ve - 0.577 * Kc * XadIfd
     #print("Ve=",Ve)
 #     if Ve <= 0:
 #         Efd = 0
@@ -233,11 +240,79 @@ def f_VE2(x):
 
 
 
+def f_w1(x):
+#     Pm1 = x[14]
+    Eqp1 = x[0]
+    Edp1 = x[1]
+    Vd1 = np.real(f_Vdq(x)[0])
+    Vq1 = np.imag(f_Vdq(x)[0])
+    Pe = (Eqp1*Vd1 - Edp1*Vq1)/Xdp
+    return 1 / (2 * H) * (7.2357560754961314 - Pe) #7.2357560754961314
+
+
+def f_w2(x):
+#     Pm2 = x[15]
+    Eqp2 = x[7]
+    Edp2 = x[8]
+    Vd2 = np.real(f_Vdq(x)[1])
+    Vq2 = np.imag(f_Vdq(x)[1])
+    Pe = (Eqp2*Vd2 - Edp2*Vq2)/Xdp
+    return 1 / (2 * H) * (6.0421477732317959 - Pe) #6.0421477732317959 
+
+
+def f_VA1(x):
+#     Vref1 = x[14]  
+    Eqp1 = x[0]
+    Edp1 = x[1]
+    Vf1 = x[4]
+    Va1 = x[5]
+    Ve1 = x[6]
+    Id1 = f_Id1(x)
+    XadIfd = Eqp1 + (Xd - Xdp) * Id1
+    Vfe = KD1 * XadIfd + KE1 * Ve1 + Aex1 * np.exp(Bex1 * Ve1)
+    yf = KF1 / TF1 * (Vfe - Vf1)
+    Vsum = 1.0586038003890010 - np.absolute(f_Vdq(x)[0]) - yf
+    return (KA1 * Vsum - Va1) / TA1
+
+
+def f_VA2(x):
+#     Vref2 = x[15]
+    Eqp2 = x[7]
+    Edp2 = x[8]
+    Vf2 = x[11]
+    Va2 = x[12]
+    Ve2 = x[13]
+    Id2 = f_Id2(x)
+    XadIfd = Eqp2 + (Xd - Xdp) * Id2
+    Vfe = KD2 * XadIfd + KE2 * Ve2 + Aex2 * np.exp(Bex2 * Ve2)
+    yf = KF2 / TF2 * (Vfe - Vf2)
+    Vsum = 1.0659163034132286 - np.absolute(f_Vdq(x)[1]) - yf
+    return (KA2 * Vsum - Va2) / TA2
+
+
+def sys_fun(x):
+    fun = [f_Eqp1, f_Edp1, f_delta1, f_w1, f_VF1, f_VA1, f_VE1, f_Eqp2, f_Edp2, f_delta2, f_w2, f_VF2, f_VA2, f_VE2]
+    
+#     J = np.array([nd.Jacobian(f)(x).ravel() for f in fun])
+#     J = J[:,:14]
+#     lam, v = np.linalg.eig(J)
+#     print(lam)
+#     res = np.append(np.array([f(x).ravel() for f in fun]).ravel(), [lam[8].real,lam[9].real])
+#     return res
+
+    return np.array([f(x).ravel() for f in fun]).ravel()
+
+all_fun = [f_Eqp1,f_Edp1,f_delta1,f_w1,f_VF1,f_VA1,f_VE1,f_Eqp2,f_Edp2,f_delta2,f_w2,f_VF2,f_VA2,f_VE2]
+
+     
+
+
 ######################################################################################################
 # ====================================================================================================
 # =========================================== DERIVATIVE =============================================
 # ====================================================================================================
 ######################################################################################################
+
 
 
 def d_Vd1(x, order):
@@ -847,6 +922,16 @@ def d_Vm1(x, order):
         dVm += np.outer(Vq * d_Vd1(x, 1) - Vd * d_Vq1(x, 1), Vq * d_Vd1(x, 1) - Vd * d_Vq1(x, 1)) / Vm ** 3
         return dVm
     if order == 3:
+#         dVm = Vd / Vm * d_Vd1(x, 3) + Vq / Vm * d_Vq1(x, 3)
+#         dVdVm = d_Vd1(x, 1) / Vm - Vd / Vm ** 2 * d_Vm1(x, 1)  # (Vq**2 * d_Vd1(x,1) - Vd*Vq * d_Vq1(x,1))/Vm**3
+#         dVqVm = d_Vq1(x, 1) / Vm - Vq / Vm ** 2 * d_Vm1(x, 1)  # (Vd**2 * d_Vq1(x,1) - Vd*Vq * d_Vd1(x,1))/Vm**3
+#         dVm += np.einsum('ij,k->kij', d_Vd1(x, 2), dVdVm) + np.einsum('ij,k->kij', d_Vq1(x, 2), dVqVm)
+#         V = Vq * d_Vd1(x, 1) - Vd * d_Vq1(x, 1)
+#         VV = np.outer(V, V)
+#         dVm += np.einsum('ij,k->kij', VV, -3.0 / Vm ** 4 * d_Vm1(x, 1))
+#         dV = Vq * d_Vd1(x, 2) + np.outer(d_Vq1(x,1), d_Vd1(x,1)) - Vd * d_Vq1(x, 2) - np.outer(d_Vd1(x,1), d_Vq1(x,1)) 
+#         dVm += (np.einsum('ij,k->jki', dV, V) + np.einsum('ij,k->jik', dV, V)) / Vm ** 3
+#         return dVm
         dVm = Vd / Vm * d_Vd1(x, 3) + Vq / Vm * d_Vq1(x, 3)
         dVm += np.einsum('ij,k->kij', d_Vd1(x, 2), (Vm*d_Vd1(x,1)-Vd*d_Vm1(x,1))/Vm**2) + \
                np.einsum('ij,k->kij', d_Vq1(x, 2), (Vm*d_Vq1(x,1)-Vq*d_Vm1(x,1))/Vm**2)
@@ -872,6 +957,15 @@ def d_Vm2(x, order):
         dVm += np.outer(Vq * d_Vd2(x, 1) - Vd * d_Vq2(x, 1), Vq * d_Vd2(x, 1) - Vd * d_Vq2(x, 1)) / Vm ** 3
         return dVm
     if order == 3:
+#         dVm = Vd / Vm * d_Vd2(x, 3) + Vq / Vm * d_Vq2(x, 3)
+#         dVdVm = (Vq ** 2 * d_Vd2(x, 1) - Vd * Vq * d_Vq2(x, 1)) / Vm ** 3
+#         dVqVm = (Vd ** 2 * d_Vq2(x, 1) - Vd * Vq * d_Vd2(x, 1)) / Vm ** 3
+#         dVm += np.einsum('ij,k->kij', d_Vd2(x, 2), dVdVm) + np.einsum('ij,k->kij', d_Vq2(x, 2), dVqVm)
+#         V = Vq * d_Vd2(x, 1) - Vd * d_Vq2(x, 1)
+#         VV = np.outer(V, V) / Vm ** 3
+#         dVm += np.einsum('ij,k->kij', VV, -3 / Vm ** 4 * (Vd / Vm * d_Vd2(x, 1) + Vq / Vm * d_Vq2(x, 1)))
+#         dV = Vq * d_Vd2(x, 2) - Vd * d_Vq2(x, 2)
+#         dVm += (np.einsum('ij,k->ikj', dV, V) + np.einsum('ij,k->jik', dV, V)) / Vm ** 3
         dVm = Vd / Vm * d_Vd2(x, 3) + Vq / Vm * d_Vq2(x, 3)
         dVm += np.einsum('ij,k->kij', d_Vd2(x, 2), (Vm*d_Vd2(x,1)-Vd*d_Vm2(x,1))/Vm**2) + \
                np.einsum('ij,k->kij', d_Vq2(x, 2), (Vm*d_Vq2(x,1)-Vq*d_Vm2(x,1))/Vm**2)
@@ -923,10 +1017,9 @@ def d_Vsum2(x, order):
 
 
 def d_Va1(x, order):
-    Va1 = x[5]
     if order == 1:
-        dVa = KA1*d_Vsum1(x, order) / TA1 
-        dVa[5] -= 1.0 / TA1    
+        dVa = KA1*d_Vsum1(x, order) / TA1
+        dVa[5] -= 1.0 / TA1
         return dVa
     if order == 2:
         return KA1*d_Vsum1(x, order) / TA1
@@ -935,7 +1028,6 @@ def d_Va1(x, order):
 
 
 def d_Va2(x, order):
-    Va2 = x[12]
     if order == 1:
         dVa = KA2*d_Vsum2(x, order) / TA2
         dVa[12] -= 1.0 / TA2
@@ -947,11 +1039,9 @@ def d_Va2(x, order):
 
 
 def d_Ve1(x, order):
-    Va1 = x[5]
-    Ve1 = x[6]
     if order == 1:
         dVe = -d_Vfe1(x, order) / TE1
-        dVe[5] += 1.0 / TE1
+        dVe[5] += 1/ TE1
         return dVe
     if order == 2:
         return -d_Vfe1(x, order) / TE1
@@ -960,12 +1050,10 @@ def d_Ve1(x, order):
 
 
 def d_Ve2(x, order):
-    Va2 = x[12]
-    Ve2 = x[13]
     if order == 1:
         dVe = -d_Vfe2(x, order) / TE2
-        dVe[12] += 1.0 / TE2
-        return dVe 
+        dVe[12] += 1/ TE2
+        return dVe
     if order == 2:
         return -d_Vfe2(x, order) / TE2
     if order == 3:
@@ -976,6 +1064,7 @@ def Jacobian(x):
     return np.array([f(x, 1) for f in
                      [d_Eq1, d_Ed1, d_delta1, d_w1, d_Vf1, d_Va1, d_Ve1, d_Eq2, d_Ed2, d_delta2, d_w2, d_Vf2, d_Va2,
                       d_Ve2]])
+
 
 def Hessian(x):
     return np.array([f(x, 2) for f in
@@ -988,10 +1077,49 @@ def Trissian(x):
                      [d_Eq1, d_Ed1, d_delta1, d_w1, d_Vf1, d_Va1, d_Ve1, d_Eq2, d_Ed2, d_delta2, d_w2, d_Vf2, d_Va2,
                       d_Ve2]])
 
-x = np.array([1.0546244552829307e+00,  6.2457917138951169e-01,
-        1.3860399333558577e+00, -5.2746489682127123e-29,
-        5.6887973361876769e+00,  5.688797336187676,
-        2.7190447967027995e+00,  9.8001167763065478e-01,
-        6.7832727915820024e-01,  1.5033307201709023e+00,
-       -9.6901529317095102e-29,  5.7237714384457252e+00,
-        5.723771438445725,  2.7356642090173811e+00])
+
+
+
+
+
+def T2_mat(n):
+    T2 = np.eye(n**2,dtype=int)
+    rmidx = np.triu_indices(n,1)[1]*n + np.triu_indices(n,1)[0]
+    T2 = np.delete(T2,rmidx,0)
+    return T2
+
+
+def S2_mat(n):
+    S2 = np.eye(n**2,dtype=int)
+    rmidx = np.triu_indices(n,1)[1]*n + np.triu_indices(n,1)[0]
+    addidx = np.triu_indices(n,1)[0]*n + np.triu_indices(n,1)[1]
+    S2[rmidx,addidx] = 1
+    S2 = np.delete(S2,rmidx,1)
+    return S2
+
+def T3_mat(n):
+    Bx3 = [(i,j,k) for i in range(n) for j in range(i,n) for k in range(j,n)] # extracted from x \otimes Bx^2
+    x_Bx2 = [(i,j,k) for i in range(n) for j in range(n) for k in range(j,n)] #  x \otimes Bx^2
+    Bx3_idx = [x_Bx2.index(i) for i in Bx3]
+    rmidx = list(set(range(len(x_Bx2)))-set(Bx3_idx))
+    rmele = [x_Bx2[i] for i in rmidx]
+    rmele = [tuple(sorted(i)) for i in rmele]
+    rmidx_inBx3 = [Bx3.index(i) for i in rmele]
+    T3 = np.eye(n*n*(n+1)//2,dtype=int)
+    T3 = T3[Bx3_idx]
+    return T3
+
+def S3_mat(n):
+    Bx3 = [(i,j,k) for i in range(n) for j in range(i,n) for k in range(j,n)] # extracted from x \otimes Bx^2
+    x_Bx2 = [(i,j,k) for i in range(n) for j in range(n) for k in range(j,n)] #  x \otimes Bx^2
+    Bx3_idx = [x_Bx2.index(i) for i in Bx3]
+    rmidx = list(set(range(len(x_Bx2)))-set(Bx3_idx))
+    rmele = [x_Bx2[i] for i in rmidx]
+    rmele = [tuple(sorted(i)) for i in rmele]
+    rmidx_inBx3 = [Bx3.index(i) for i in rmele]
+    S3 = np.eye(n*n*(n+1)//2,dtype=int)
+    S3 = S3[:,Bx3_idx]
+    S3[rmidx,rmidx_inBx3] = 1
+    return S3
+
+

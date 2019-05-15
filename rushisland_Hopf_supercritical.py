@@ -71,20 +71,6 @@ def f_Vdq(x):
     E2 = (Edp2 + 1j * Eqp2) * np.exp(1j * (delta2 - np.pi / 2))
 
     Vdq = np.zeros((2, 1), dtype=complex)
-#     Z13 = 3.8E-4 + 1j * 1.216E-2  #
-#     Z23 = 3.8E-4 + 1j * 1.184E-2  #
-#     Z34 = 3.57E-3 + 1j * 3.362E-2  #
-#     Z12 = Z13 + Z23 + (Z13 * Z23) / Z34;
-#     Z24 = Z23 + Z34 + (Z23 * Z34) / Z13;
-#     Z14 = Z13 + Z34 + (Z13 * Z34) / Z23;
-#     Y12 = 1 / Z12
-#     Y24 = 1 / Z24
-#     Y14 = 1 / Z14
-#     Y1 = 1 / (1j * Xdp);
-#     Y2 = Y1;
-#     C = np.linalg.solve(np.array([[Y12 + Y14 + Y1, -Y12], [-Y12, Y12 + Y24 + Y2]]),
-#                         np.array([[Y1, 0, Y14], [0, Y2, Y24]]))
-
     D = np.array([[np.exp(1j * (np.pi / 2 - delta1)), 0], [0, np.exp(1j * (np.pi / 2 - delta2))]], dtype=complex)
     y = np.array([[E1], [E2], [1]], dtype=complex)
     Vdq = np.matmul(np.matmul(D, C), y)
@@ -191,24 +177,22 @@ def f_delta2(x):
 # Pe = Eq*Iq + Ed*Id = Eq*(Vd-Ed)/Xqp + Ed*(Eq-Vq)/Xdp = (Eq*Vd - Ed*Vq)/Xdp
 def f_w1(x):
     #     Pm = x[14]
-    Pm = 5.4272581963009570
     Eqp1 = x[0]
     Edp1 = x[1]
     Vd1 = np.real(f_Vdq(x)[0])
     Vq1 = np.imag(f_Vdq(x)[0])
     Pe = (Eqp1*Vd1 - Edp1*Vq1)/Xdp
-    return 1 / (2 * H) * (Pm - Pe)
+    return 1 / (2 * H) * (5.4272581963009570- Pe) # 5.4272581963009570
 
 
 def f_w2(x):
     #     Pm = x[15]
-    Pm = 4.5459824955834529
     Eqp2 = x[7]
     Edp2 = x[8]
     Vd2 = np.real(f_Vdq(x)[1])
     Vq2 = np.imag(f_Vdq(x)[1])
     Pe = (Eqp2*Vd2 - Edp2*Vq2)/Xdp
-    return 1 / (2 * H) * (Pm - Pe)
+    return 1 / (2 * H) * (4.5459824955834529 - Pe) # 4.5459824955834529
 
 
 

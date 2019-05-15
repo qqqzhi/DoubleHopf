@@ -149,8 +149,8 @@ def f_delta2(x):
 # Pe = Eq*Iq + Ed*Id = Eq*(Vd-Ed)/Xqp + Ed*(Eq-Vq)/Xdp = (Eq*Vd - Ed*Vq)/Xdp
 def f_w1(x):
     #Pm = x[14]
-    #Pm = 5.1338388341401240
-    Pm = 5.4 # For time domain simulation
+    Pm = 5.1338388341401240
+    # Pm = 5.4 # For time domain simulation
     Eqp1 = x[0]
     Edp1 = x[1]
     Vd1 = np.real(f_Vdq(x)[0])
@@ -161,8 +161,8 @@ def f_w1(x):
 
 def f_w2(x):
     #Pm = x[15]
-    #Pm = 4.3440102560399287
-    Pm = 4.3 # For time domain simulation
+    Pm = 4.3440102560399287
+    # Pm = 4.3 # For time domain simulation
     Eqp2 = x[7]
     Edp2 = x[8]
     Vd2 = np.real(f_Vdq(x)[1])
